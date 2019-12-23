@@ -1,23 +1,19 @@
 package be.rlab.augusto.domain
 
+import be.rlab.augusto.domain.model.CommandTrigger
+import be.rlab.augusto.domain.model.CommandTrigger.Companion.trigger
+import be.rlab.augusto.nlp.model.Language
 import be.rlab.tehanu.domain.MessageContext
-import be.rlab.tehanu.domain.MessageListener
-import be.rlab.tehanu.domain.model.Chat
 import be.rlab.tehanu.domain.model.Message
 import be.rlab.tehanu.domain.model.TextMessage
-import be.rlab.tehanu.domain.model.User
 
-class CountNumbers(
+class ConvertNumbers(
     override val name: String
-) : MessageListener {
+) : NaturalCommand() {
 
-    override fun applies(
-        chat: Chat,
-        user: User?,
-        message: Message
-    ): Boolean {
-        return message is TextMessage
-    }
+    override val triggers: List<CommandTrigger> = listOf(
+        trigger(Language.SPANISH, "convert", 0.5)
+    )
 
     override fun handle(
         context: MessageContext,
@@ -27,7 +23,7 @@ class CountNumbers(
 
         return message.text.toIntOrNull()?.let { arabic ->
             val roman: String = RomanNumeric.arabicToRoman(arabic)
-            context.answer("$roman")
+            context.answer(roman)
         } ?: run {
             val arabic: Int = RomanNumeric.romanToDecimal(message.text)
             if (arabic > 0) {
