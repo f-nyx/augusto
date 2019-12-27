@@ -33,13 +33,20 @@ class TextClassifier(
         text: String,
         language: Language
     ) {
-        indexManager.index(
-            Document.new(
-                namespace, language,
-                Field.text(CATEGORY_FIELD, category),
-                Field.text(TEXT_FIELD, text)
+        val normalizedText: String = Normalizer(text, language = language)
+            .skipStemming()
+            .removeStopWords()
+            .normalize()
+
+        normalizedText.split(" ").forEach { term ->
+            indexManager.index(
+                Document.new(
+                    namespace, language,
+                    Field.text(CATEGORY_FIELD, category),
+                    Field.text(TEXT_FIELD, term)
+                )
             )
-        )
+        }
     }
 
     /** Trains the classifier from data sets.
@@ -47,8 +54,10 @@ class TextClassifier(
      */
     fun train(dataSets: List<TrainingDataSet>) {
         dataSets.forEach { dataSet ->
-            dataSet.categories.zip(dataSet.values).forEach { (category, value) ->
-                train(category, value, dataSet.language)
+            dataSet.categories.forEach { category ->
+                dataSet.values.forEach { value ->
+                    train(category, value, dataSet.language)
+                }
             }
         }
     }

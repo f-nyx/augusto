@@ -14,12 +14,13 @@ class NaturalService(
 ) {
 
     companion object {
+        const val CLASSIFIER_NAMESPACE: String = "NaturalService"
         private const val APPLIED_TRAINING_SETS_SLOT = "appliedTrainingSets"
         private const val TRAINING_SETS_SLOT = "trainingSets"
     }
 
     private var appliedTrainingSets: Set<String> by memory.slot(APPLIED_TRAINING_SETS_SLOT, emptySet<String>())
-    private var trainingSets: Map<String, List<TrainingDataSet>> by memory.slot(TRAINING_SETS_SLOT, emptyMap<String, List<TrainingDataSet>>())
+    private var trainingSets: List<TrainingDataSet> by memory.slot(TRAINING_SETS_SLOT, emptyList<TrainingDataSet>())
 
     /** Loads training data from configuration files, if required.
      */
@@ -33,24 +34,17 @@ class NaturalService(
             val force: Boolean = trainingConfig.getBoolean("force")
 
             if (force || !appliedTrainingSets.contains(resource)) {
-                val classifierName: String = trainingConfig.getString("classifier")
                 val newTrainingSets: List<TrainingDataSet> = trainingConfig.getConfigList("training")
                     .map(this::createTrainingSet)
 
                 val classifier = TextClassifier(
                     indexManager = indexManager,
-                    namespace = classifierName
+                    namespace = CLASSIFIER_NAMESPACE
                 )
 
                 classifier.train(newTrainingSets)
 
-                if (!trainingSets.containsKey(classifierName)) {
-                    trainingSets = trainingSets + (classifierName to emptyList())
-                }
-
-                val existingTrainingSets = trainingSets.getValue(classifierName)
-
-                trainingSets = trainingSets + (classifierName to existingTrainingSets + newTrainingSets)
+                trainingSets = trainingSets + newTrainingSets
                 appliedTrainingSets = appliedTrainingSets + resource
             }
         }

@@ -21,7 +21,7 @@ class Main : SpringApplication() {
         applicationContext.getBeansOfType(NaturalCommand::class.java).forEach { (_, instance) ->
             instance.textClassifier = TextClassifier(
                 indexManager = applicationContext.getBean(),
-                namespace = instance.name
+                namespace = NaturalService.CLASSIFIER_NAMESPACE
             )
         }
 

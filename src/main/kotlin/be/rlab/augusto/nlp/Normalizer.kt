@@ -13,8 +13,9 @@ import java.text.Normalizer as JavaNormalizer
  * @param caseSensitive Indicates whether to convert string to lowercase or not.
  * @param form Normalization form.
  * @param removeDiacritics Indicates whether to remove diacritics.
+ * @param removePunctuation Indicates whether to split text into words.
+ * @param removeStopWords Indicates whether to strip out stop words.
  * @param stemming Indicates whether to apply the stemer to each term.
- * @param tokenize Indicates whether to split text into words.
  * @param joinWith String to join the terms.
  */
 data class Normalizer(
@@ -23,8 +24,9 @@ data class Normalizer(
     private val caseSensitive: Boolean = false,
     private val form: JavaNormalizer.Form = JavaNormalizer.Form.NFD,
     private val removeDiacritics: Boolean = true,
+    private val removePunctuation: Boolean = true,
+    private val removeStopWords: Boolean = false,
     private val stemming: Boolean = true,
-    private val tokenize: Boolean = true,
     private val joinWith: String = " "
 ) {
     companion object {
@@ -44,9 +46,10 @@ data class Normalizer(
         )
     }
 
-    /** Word tokenizer to split text into words.
-     */
+    /** Word tokenizer to split text into words. */
     private val wordTokenizer = WordTokenizer()
+    private val stopWordTokenizer = StopWordTokenizer.new(language)
+    private val stemmer = SnowballStemmer.new(language)
 
     fun caseSensitive(): Normalizer = copy(
         caseSensitive = true
@@ -68,20 +71,28 @@ data class Normalizer(
         removeDiacritics = false
     )
 
+    fun removeStopWords(): Normalizer = copy(
+        removeStopWords = true
+    )
+
+    fun keepStopWords(): Normalizer = copy(
+        removeStopWords = false
+    )
+
+    fun removePunctuation(): Normalizer = copy(
+        removePunctuation = true
+    )
+
+    fun keepPunctuation(): Normalizer = copy(
+        removePunctuation = false
+    )
+
     fun applyStemming(): Normalizer = copy(
         stemming = true
     )
 
     fun skipStemming(): Normalizer = copy(
         stemming = false
-    )
-
-    fun applyTokenizer(): Normalizer = copy(
-        tokenize = true
-    )
-
-    fun skipTokenizer(): Normalizer = copy(
-        tokenize = false
     )
 
     fun joinWith(joinText: String): Normalizer = copy(
@@ -92,7 +103,7 @@ data class Normalizer(
      * @return a valid text.
      */
     fun normalize(): String {
-        val normalizedText = with(JavaNormalizer.normalize(text, form)) { ->
+        var normalizedText = with(JavaNormalizer.normalize(text, form)) { ->
             if (removeDiacritics) {
                 replace(REGEX_UNACCENT, "")
             } else {
@@ -100,25 +111,28 @@ data class Normalizer(
             }
         }
 
-        return if (tokenize) {
-            wordTokenizer.tokenize(normalizedText.reader()).map { word ->
+        if (removeDiacritics) {
+            normalizedText = normalizedText.replace(REGEX_UNACCENT, "")
+        }
+        if (removePunctuation) {
+            normalizedText = wordTokenizer.tokenize(normalizedText.reader()).map { word ->
                 word.toString()
-            }
-        } else {
-            listOf(normalizedText)
-        }.map { token ->
-            if (caseSensitive) {
-                token
-            } else {
-                token.toLowerCase()
-            }
-        }.joinToString(joinWith) { token ->
-            if (stemming) {
-                val stemmer: SnowballStemmer = SnowballStemmer.new(language)
-                stemmer.stem(token)
-            } else {
-                token
+            }.joinToString(joinWith)
+        }
+        if (removeStopWords) {
+            normalizedText = stopWordTokenizer.tokenize(normalizedText.reader()).map { word ->
+                word.toString()
+            }.joinToString(joinWith)
+        }
+        if (stemming) {
+            normalizedText = normalizedText.split(joinWith).joinToString(joinWith) { word ->
+                stemmer.stem(word)
             }
         }
+        if (!caseSensitive) {
+            normalizedText = normalizedText.toLowerCase()
+        }
+
+        return normalizedText
     }
 }

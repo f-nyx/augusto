@@ -38,14 +38,10 @@ class StopWordTokenizer(
         fun stopWords(language: Language): List<String> {
             val langFile = "nlp/stopwords/${stopWordFiles[language]}"
 
-            val stopWords: List<String> = Thread.currentThread().contextClassLoader
+            return Thread.currentThread().contextClassLoader
                 .getResourceAsStream(langFile)?.use { resource ->
                     resource.bufferedReader().lines().toList()
                 } ?: emptyList()
-
-            return stopWords.map { word ->
-                Normalizer(word, language).normalize()
-            }
         }
     }
 

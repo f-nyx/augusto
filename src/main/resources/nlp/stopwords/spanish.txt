@@ -1,4 +1,4 @@
-﻿﻿algún
+﻿algún
 alguna
 algunas
 alguno
@@ -34,7 +34,6 @@ cuando
 dentro
 desde
 donde
-dos
 el
 ellas
 ellos
@@ -154,7 +153,6 @@ ultimo
 un
 una
 unas
-uno
 unos
 usa
 usais
@@ -226,7 +224,6 @@ cada
 casi
 cerca
 cierto
-cinco
 comentó
 como
 con
@@ -241,7 +238,6 @@ cuales
 cualquier
 cuando
 cuanto
-cuatro
 cuenta
 da
 dado
@@ -268,7 +264,6 @@ dijeron
 dijo
 dio
 donde
-dos
 durante
 e
 ejemplo
@@ -397,7 +392,6 @@ nuevo
 nuevos
 nunca
 o
-ocho
 otra
 otras
 otro
@@ -460,7 +454,6 @@ sean
 según
 segunda
 segundo
-seis
 ser
 será
 serán
@@ -469,7 +462,6 @@ si
 sido
 siempre
 siendo
-siete
 sigue
 siguiente
 sin
@@ -508,7 +500,6 @@ total
 tras
 trata
 través
-tres
 tuvo
 un
 una
