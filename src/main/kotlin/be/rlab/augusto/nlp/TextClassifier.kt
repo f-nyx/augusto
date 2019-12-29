@@ -1,12 +1,8 @@
 package be.rlab.augusto.nlp
 
 import be.rlab.augusto.nlp.model.*
-import org.apache.lucene.classification.SimpleNaiveBayesClassifier
-import org.apache.lucene.index.Term
-import org.apache.lucene.search.TermQuery
-import org.apache.lucene.util.BytesRef
-import java.nio.charset.Charset
-import org.apache.lucene.classification.ClassificationResult as LuceneClassificationResult
+import org.apache.lucene.search.spell.JaroWinklerDistance
+import org.apache.lucene.search.spell.LevenshteinDistance
 
 /** This class allows to train and to query a [naive bayes classifier](https://en.wikipedia.org/wiki/Naive_Bayes_classifier).
  * It uses an [Index] to store the training data set.
@@ -19,6 +15,7 @@ class TextClassifier(
     companion object {
         private const val CATEGORY_FIELD: String = "category"
         private const val TEXT_FIELD: String = "text"
+        private const val MAX_FEATURES: Int = 10000
     }
 
     /** Analyzes and sets the category for a text.
@@ -38,15 +35,13 @@ class TextClassifier(
             .removeStopWords()
             .normalize()
 
-        normalizedText.split(" ").forEach { term ->
-            indexManager.index(
-                Document.new(
-                    namespace, language,
-                    Field.text(CATEGORY_FIELD, category),
-                    Field.text(TEXT_FIELD, term)
-                )
+        indexManager.index(
+            Document.new(
+                namespace, language,
+                Field.text(CATEGORY_FIELD, category),
+                Field.text(TEXT_FIELD, normalizedText)
             )
-        }
+        )
     }
 
     /** Trains the classifier from data sets.
@@ -71,8 +66,7 @@ class TextClassifier(
         text: String,
         language: Language
     ): String? {
-        val result: LuceneClassificationResult<BytesRef>? = classifier(language).assignClass(text)
-        return result?.assignedClass?.bytes?.toString(Charset.defaultCharset())
+        return classifyAll(text, language).firstOrNull()?.assignedClass
     }
 
     /** Resolves all categories for a text.
@@ -84,23 +78,42 @@ class TextClassifier(
         text: String,
         language: Language
     ): List<ClassificationResult> {
-        return classifier(language).getClasses(text).map { result ->
+
+        val features: PaginatedResult = indexManager.search(
+            namespace = namespace,
+            fields = mapOf(CATEGORY_FIELD to "*"),
+            language = language,
+            limit = MAX_FEATURES
+        )
+
+        return features.results.groupBy { document ->
+            document[CATEGORY_FIELD]!!
+        }.map { (category, documents) ->
+            val distance: Float = documents.map { document ->
+                val feature = Normalizer(document[TEXT_FIELD]!!, language)
+                    .applyStemming()
+                    .removeStopWords()
+                    .normalize()
+                distance(feature, text)
+            }.max() ?: 0.toFloat()
+
             ClassificationResult(
-                assignedClass = result.assignedClass.utf8ToString(),
-                score = result.score
+                assignedClass = category,
+                score = distance.toDouble()
             )
         }
     }
 
-    private fun classifier(language: Language): SimpleNaiveBayesClassifier {
-        val index: Index = indexManager.index(language)
-
-        return SimpleNaiveBayesClassifier(
-            index.indexReader,
-            index.analyzer,
-            TermQuery(Term(IndexManager.NAMESPACE_FIELD, namespace)),
-            CATEGORY_FIELD,
-            TEXT_FIELD
-        )
+    /** Calculates the Jaro-Winkler distance between two texts.
+     * This algorithm works very well on terms that share the same prefixes.
+     * @param text A text to measure.
+     * @param otherText Other text to measure.
+     * @return the distance as a float between 0 and 1.
+     */
+    fun distance(
+        text: String,
+        otherText: String
+    ): Float {
+        return JaroWinklerDistance().getDistance(text, otherText)
     }
 }

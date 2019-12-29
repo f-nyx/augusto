@@ -14,7 +14,6 @@ class NaturalService(
 ) {
 
     companion object {
-        const val CLASSIFIER_NAMESPACE: String = "NaturalService"
         private const val APPLIED_TRAINING_SETS_SLOT = "appliedTrainingSets"
         private const val TRAINING_SETS_SLOT = "trainingSets"
     }
@@ -32,6 +31,7 @@ class NaturalService(
         }.forEach { resource ->
             val trainingConfig: Config = ConfigFactory.load("nlp/training/${resource}")
             val force: Boolean = trainingConfig.getBoolean("force")
+            val classifierName: String = trainingConfig.getString("classifier")
 
             if (force || !appliedTrainingSets.contains(resource)) {
                 val newTrainingSets: List<TrainingDataSet> = trainingConfig.getConfigList("training")
@@ -39,7 +39,7 @@ class NaturalService(
 
                 val classifier = TextClassifier(
                     indexManager = indexManager,
-                    namespace = CLASSIFIER_NAMESPACE
+                    namespace = classifierName
                 )
 
                 classifier.train(newTrainingSets)

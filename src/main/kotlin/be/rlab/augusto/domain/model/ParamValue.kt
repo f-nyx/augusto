@@ -23,4 +23,8 @@ data class ParamValue(
             valid = false
         )
     }
+
+    override fun toString(): String {
+        return "$name ${values.joinToString(" ")}"
+    }
 }
