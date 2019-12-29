@@ -2,9 +2,12 @@ package be.rlab.augusto.nlp
 
 import be.rlab.augusto.nlp.model.*
 import org.apache.lucene.search.spell.JaroWinklerDistance
-import org.apache.lucene.search.spell.LevenshteinDistance
 
-/** This class allows to train and to query a [naive bayes classifier](https://en.wikipedia.org/wiki/Naive_Bayes_classifier).
+/** This class allows to train and query text classifiers.
+ *
+ * This implementation is not designed for performance. The classification retrieves all features from the index
+ * for a specific namespace and it evaluates distances on runtime. The features are normalized before storing them.
+ *
  * It uses an [Index] to store the training data set.
  */
 class TextClassifier(
@@ -31,7 +34,7 @@ class TextClassifier(
         language: Language
     ) {
         val normalizedText: String = Normalizer(text, language = language)
-            .skipStemming()
+            .applyStemming()
             .removeStopWords()
             .normalize()
 
@@ -86,15 +89,16 @@ class TextClassifier(
             limit = MAX_FEATURES
         )
 
+        val normalizedText: String = Normalizer(text, language)
+            .applyStemming()
+            .removeStopWords()
+            .normalize()
+
         return features.results.groupBy { document ->
             document[CATEGORY_FIELD]!!
         }.map { (category, documents) ->
             val distance: Float = documents.map { document ->
-                val feature = Normalizer(document[TEXT_FIELD]!!, language)
-                    .applyStemming()
-                    .removeStopWords()
-                    .normalize()
-                distance(feature, text)
+                distance(document[TEXT_FIELD]!!, normalizedText)
             }.max() ?: 0.toFloat()
 
             ClassificationResult(

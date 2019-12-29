@@ -32,6 +32,8 @@ import org.apache.lucene.document.FieldType as LuceneFieldType
  * This implementation uses a file system based index, so changes requires synchronization before the index is
  * closed. If you don't call [sync] before shutting down the application, all pending changes will be lost.
  *
+ * NOTE: [IndexManager] instances are completely thread safe.
+ *
  * @param indexPath Path to store indexes.
  */
 class IndexManager(indexPath: String) {
