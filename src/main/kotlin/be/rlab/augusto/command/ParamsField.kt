@@ -22,6 +22,7 @@ fun UserInput.params(
         ).parse(rawValue.first().toString())
     }
 
+    // TODO(nyx): add retry limit
     validator { value ->
         val trigger = RequiredParamsTrigger(
             name = "params field",

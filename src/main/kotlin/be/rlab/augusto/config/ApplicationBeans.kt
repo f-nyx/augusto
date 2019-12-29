@@ -54,7 +54,7 @@ object ApplicationBeans {
     ): Map<String, CommandConfig> {
         return config.getConfigList("commands").map { commandConfig ->
             val commandName: String = commandConfig.getString("name")
-            val language = Language.valueOf(commandConfig.getString("language").toUpperCase())
+            val language = Language.valueOf(commandConfig.getString("default-language").toUpperCase())
             val triggers = commandConfig.getConfigList("triggers").map { triggerConfig ->
                 resolveTrigger(indexManager, commandName, triggerConfig)
             }
