@@ -18,7 +18,7 @@ object Numbers {
         value: Int,
         language: Language
     ): String {
-        val formatter: NumberFormat = RuleBasedNumberFormat(ULocale(language.locale), RuleBasedNumberFormat.SPELLOUT)
+        val formatter: NumberFormat = RuleBasedNumberFormat(ULocale(language.code), RuleBasedNumberFormat.SPELLOUT)
         return formatter.format(value)
     }
 
@@ -31,7 +31,7 @@ object Numbers {
         value: String,
         language: Language
     ): Number {
-        val formatter: NumberFormat = RuleBasedNumberFormat(ULocale(language.locale), RuleBasedNumberFormat.SPELLOUT)
+        val formatter: NumberFormat = RuleBasedNumberFormat(ULocale(language.code), RuleBasedNumberFormat.SPELLOUT)
         return formatter.parse(value)
     }
 }

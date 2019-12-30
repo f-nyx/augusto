@@ -3,10 +3,6 @@ package be.rlab.augusto.nlp
 import be.rlab.augusto.nlp.Hashes.getLanguage
 import be.rlab.augusto.nlp.model.*
 import org.apache.lucene.analysis.Analyzer
-import org.apache.lucene.analysis.CharArraySet
-import org.apache.lucene.analysis.en.EnglishAnalyzer
-import org.apache.lucene.analysis.es.SpanishAnalyzer
-import org.apache.lucene.analysis.pt.PortugueseAnalyzer
 import org.apache.lucene.document.StringField
 import org.apache.lucene.document.TextField
 import org.apache.lucene.index.*
@@ -57,22 +53,9 @@ class IndexManager(indexPath: String) {
     private val indexes: MutableMap<Language, Index> = mutableMapOf()
 
     init {
-        val analyzers: Map<Language, Analyzer> = mapOf(
-            Language.ENGLISH to EnglishAnalyzer(
-                CharArraySet(StopWordTokenizer.stopWords(Language.ENGLISH), false)
-            ),
-            Language.PORTUGUESE to PortugueseAnalyzer(
-                CharArraySet(StopWordTokenizer.stopWords(Language.PORTUGUESE), false)
-            ),
-            Language.SPANISH to SpanishAnalyzer(
-                CharArraySet(StopWordTokenizer.stopWords(Language.SPANISH), false)
-            )
-        )
-
         Language.values().map { language ->
             val indexDir: Directory = FSDirectory.open(File(indexPath, language.name.toLowerCase()).toPath())
-            val analyzer: Analyzer = analyzers[language]
-                ?: throw RuntimeException("Language not supported: $language")
+            val analyzer: Analyzer = AnalyzerFactory.newAnalyzer(language)
             val indexWriter = IndexWriter(indexDir, IndexWriterConfig(analyzer)).apply {
                 commit()
             }
@@ -158,12 +141,12 @@ class IndexManager(indexPath: String) {
             BooleanClause.Occur.MUST
         ).build()
 
-        val searcher = searcher(language)
-
-        return if (cursor.isFirst()) {
-            transform(searcher, searcher.search(query, limit), cursor)
-        } else {
-            transform(searcher, searcher.searchAfter(scoreDoc(cursor), query, limit))
+        return with(searcher(language)) {
+            if (cursor.isFirst()) {
+                transform(this, search(query, limit), cursor)
+            } else {
+                transform(this, searchAfter(scoreDoc(cursor), query, limit))
+            }
         }
     }
 
