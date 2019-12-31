@@ -120,9 +120,13 @@ data class Normalizer(
             }.joinToString(joinWith)
         }
         if (removeStopWords) {
-            normalizedText = stopWordTokenizer.tokenize(normalizedText.reader()).map { word ->
+            val candidateText: String = stopWordTokenizer.tokenize(normalizedText.reader()).map { word ->
                 word.toString()
             }.joinToString(joinWith)
+
+            if (candidateText.isNotBlank()) {
+                normalizedText = candidateText
+            }
         }
         if (stemming) {
             normalizedText = normalizedText.split(joinWith).joinToString(joinWith) { word ->

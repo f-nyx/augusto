@@ -6,7 +6,7 @@ import be.rlab.tehanu.domain.model.TextMessage
 import be.rlab.tehanu.domain.model.User
 
 /** Must be implemented in order to evaluate if a message can be handled by a
- * [be.rlab.augusto.domain.TriggerHandler].
+ * the underlying handler.
  */
 interface Trigger {
 

@@ -1,6 +1,8 @@
 package be.rlab.augusto.config
 
+import be.rlab.augusto.command.Cancel
 import be.rlab.augusto.command.ConvertNumbers
+import be.rlab.augusto.domain.MessageSource
 import be.rlab.augusto.domain.NaturalService
 import be.rlab.augusto.domain.triggers.CategoryTrigger
 import be.rlab.augusto.domain.triggers.TextTrigger
@@ -9,6 +11,7 @@ import be.rlab.augusto.nlp.IndexManager
 import be.rlab.augusto.nlp.TextClassifier
 import be.rlab.augusto.nlp.model.Language
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueType
 import org.springframework.context.support.beans
 
 object ApplicationBeans {
@@ -16,7 +19,8 @@ object ApplicationBeans {
     private data class CommandConfig(
         val name: String,
         val language: Language,
-        val triggers: List<Trigger>
+        val triggers: List<Trigger>,
+        val messageSource: MessageSource
     )
 
     fun beans(config: Config) = beans {
@@ -27,7 +31,19 @@ object ApplicationBeans {
             ConvertNumbers(
                 name = commandConfig.name,
                 language = commandConfig.language,
-                triggers = commandConfig.triggers
+                triggers = commandConfig.triggers,
+                messages = commandConfig.messageSource
+            )
+        }
+
+        bean {
+            val commandConfig = getConfig(ref(), config, "Cancel")
+
+            Cancel(
+                name = commandConfig.name,
+                language = commandConfig.language,
+                triggers = commandConfig.triggers,
+                messages = commandConfig.messageSource
             )
         }
 
@@ -52,17 +68,34 @@ object ApplicationBeans {
         indexManager: IndexManager,
         config: Config
     ): Map<String, CommandConfig> {
-        return config.getConfigList("commands").map { commandConfig ->
-            val commandName: String = commandConfig.getString("name")
+        require(config.getValue("commands").valueType() == ConfigValueType.OBJECT)
+
+        @Suppress("UNCHECKED_CAST")
+        val commandsNames = config.getConfig("commands").root().entries.map { entry ->
+            entry.key
+        }
+
+        return commandsNames.map { commandName ->
+            val commandConfig: Config = config.getConfig("commands").getConfig(commandName)
             val language = Language.valueOf(commandConfig.getString("default-language").toUpperCase())
             val triggers = commandConfig.getConfigList("triggers").map { triggerConfig ->
                 resolveTrigger(indexManager, commandName, triggerConfig)
             }
 
+            val messageSource: MessageSource = if (commandConfig.hasPath("messages")) {
+                MessageSource.parse(
+                    defaultLanguage = language,
+                    messages = commandConfig.getConfig("messages")
+                )
+            } else {
+                MessageSource.empty()
+            }
+
             commandName to CommandConfig(
                 name = commandName,
                 language = language,
-                triggers = triggers
+                triggers = triggers,
+                messageSource = messageSource
             )
         }.toMap()
     }

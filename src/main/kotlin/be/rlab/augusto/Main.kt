@@ -2,6 +2,7 @@ package be.rlab.augusto
 
 import be.rlab.augusto.config.ApplicationBeans
 import be.rlab.augusto.domain.NaturalService
+import be.rlab.augusto.domain.TriggerCommand
 import be.rlab.tehanu.SpringApplication
 import be.rlab.tehanu.config.SlackBeans
 import org.springframework.beans.factory.getBean
@@ -16,6 +17,11 @@ class Main : SpringApplication() {
     }
 
     override fun ready() {
+        applicationContext.getBeansOfType(
+            TriggerCommand::class.java
+        ).values.forEach { command ->
+            command.initialize()
+        }
         val naturalService: NaturalService = applicationContext.getBean()
         naturalService.loadTrainingData()
     }
