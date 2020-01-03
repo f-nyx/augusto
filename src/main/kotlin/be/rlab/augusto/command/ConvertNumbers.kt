@@ -61,6 +61,7 @@ class ConvertNumbers(
     ): MessageContext = withConverters(context, params) { sourceConverter, targetConverter ->
         context.answer(messages[ACCEPT_ANSWERS])
         context.userInput {
+            @Transition("cancel")
             val value: String by field(messages[CONVERT_ANSWERS])
 
             onSubmit {

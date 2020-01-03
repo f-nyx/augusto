@@ -5,6 +5,7 @@ import be.rlab.augusto.domain.NaturalService
 import be.rlab.augusto.domain.TriggerCommand
 import be.rlab.tehanu.SpringApplication
 import be.rlab.tehanu.config.SlackBeans
+import be.rlab.tehanu.config.TelegramBeans
 import org.springframework.beans.factory.getBean
 
 class Main : SpringApplication() {
@@ -12,7 +13,8 @@ class Main : SpringApplication() {
     override fun initialize() {
         applicationContext.apply {
             ApplicationBeans.beans(resolveConfig()).initialize(this)
-            SlackBeans.beans(resolveConfig()).initialize(this)
+            //SlackBeans.beans(resolveConfig()).initialize(this)
+            TelegramBeans.beans(resolveConfig()).initialize(this)
         }
     }
 
