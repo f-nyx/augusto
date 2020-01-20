@@ -1,27 +1,25 @@
 package be.rlab.augusto.command
 
 import be.rlab.augusto.domain.MessageNormalizer
-import be.rlab.augusto.domain.MessageSource
-import be.rlab.augusto.domain.TriggerCommand
 import be.rlab.augusto.domain.converters.DecimalNumberConverter
 import be.rlab.augusto.domain.converters.NumberConverter
 import be.rlab.augusto.domain.converters.RomanNumericConverter
 import be.rlab.augusto.domain.model.ParamDefinition
 import be.rlab.augusto.domain.model.ParamDefinition.Companion.param
 import be.rlab.augusto.domain.model.ParamValue
-import be.rlab.augusto.domain.triggers.Bind
+import be.rlab.augusto.domain.triggers.CategoryTrigger
 import be.rlab.augusto.domain.triggers.Params
-import be.rlab.augusto.domain.triggers.Trigger
-import be.rlab.augusto.nlp.model.Language
-import be.rlab.tehanu.domain.MessageContext
-import be.rlab.tehanu.domain.model.TextMessage
+import be.rlab.augusto.domain.triggers.TextTrigger
+import be.rlab.nlp.model.Language
+import be.rlab.tehanu.annotations.Handler
+import be.rlab.tehanu.annotations.MessageListener
+import be.rlab.tehanu.annotations.Trigger
+import be.rlab.tehanu.annotations.TriggerParam
+import be.rlab.tehanu.messages.MessageContext
+import be.rlab.tehanu.messages.model.TextMessage
 
-class ConvertNumbers(
-    override val name: String,
-    override val language: Language,
-    override val triggers: List<Trigger>,
-    override val messages: MessageSource
-) : TriggerCommand() {
+@MessageListener("ConvertNumbers")
+class ConvertNumbers {
 
     companion object {
         const val NUM_PARAMS: Int = 2
@@ -52,17 +50,22 @@ class ConvertNumbers(
         param("base", 1)
     )
 
-    @Bind("convert")
+    @Handler("mention")
     @Params("convert-params")
+    @Trigger(
+        type = CategoryTrigger::class,
+        params = [
+            TriggerParam("category", "convert"),
+            TriggerParam("score", "0.75")
+        ]
+    )
     fun convertFromUnits(
         context: MessageContext,
-        message: TextMessage,
         params: List<ParamValue>
     ): MessageContext = withConverters(context, params) { sourceConverter, targetConverter ->
-        context.answer(messages[ACCEPT_ANSWERS])
+        context.answer(context.messages[ACCEPT_ANSWERS])
         context.userInput {
-            @Transition("cancel")
-            val value: String by field(messages[CONVERT_ANSWERS])
+            val value: String by field(context.messages[CONVERT_ANSWERS])
 
             onSubmit {
                 val decimal: Int = sourceConverter.toDecimal(value)
@@ -72,17 +75,24 @@ class ConvertNumbers(
         }
     }
 
-    @Bind("mention", "numbers")
+    @Handler("mention")
+    @Trigger(
+        type = TextTrigger::class,
+        params = [
+            TriggerParam("regex", "(\\d+)"),
+            TriggerParam("normalize", "true")
+        ]
+    )
     fun convertFromNumber(
         context: MessageContext,
         message: TextMessage
     ): MessageContext = context.userInput {
-        val values: List<ParamValue> by params(messages[UNIT_ANSWERS], convertParams, minParams = NUM_PARAMS)
+        val values: List<ParamValue> by params(context.messages[UNIT_ANSWERS], convertParams, minParams = NUM_PARAMS)
 
         onSubmit {
             withConverters(context, values) { sourceConverter, targetConverter ->
                 val decimal: Int = sourceConverter.toDecimal(
-                    MessageNormalizer(message, language).normalize()
+                    MessageNormalizer(message, Language.SPANISH).normalize()
                 )
                 val target: String = targetConverter.fromDecimal(decimal)
                 context.talk(target)
@@ -90,11 +100,15 @@ class ConvertNumbers(
         }
     }
 
-    @Bind("help")
-    fun help(
-        context: MessageContext,
-        message: TextMessage
-    ): MessageContext {
+    @Handler
+    @Trigger(
+        type = CategoryTrigger::class,
+        params = [
+            TriggerParam("category", "help"),
+            TriggerParam("score", "0.75")
+        ]
+    )
+    fun help(context: MessageContext): MessageContext = with(context) {
         return context.talk(messages[HELP])
     }
 
@@ -102,16 +116,16 @@ class ConvertNumbers(
         context: MessageContext,
         params: List<ParamValue>,
         callback: (NumberConverter, NumberConverter) -> MessageContext
-    ): MessageContext {
+    ): MessageContext = with(context) {
         val sourceConverter: NumberConverter? = converters[params[0].name]
         val targetConverter: NumberConverter? = converters[params[1].name]
 
         return when {
             sourceConverter == null ->
-                context.answer(messages.get(UNKNOWN_ANSWERS, CONVERT_FROM, params[0]))
+                answer(messages.get(UNKNOWN_ANSWERS, CONVERT_FROM, params[0]))
 
             targetConverter == null ->
-                context.answer(messages.get(UNKNOWN_ANSWERS, CONVERT_TO, params[1]))
+                answer(messages.get(UNKNOWN_ANSWERS, CONVERT_TO, params[1]))
 
             else ->
                 callback(sourceConverter, targetConverter)

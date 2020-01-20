@@ -1,10 +1,10 @@
 package be.rlab.augusto.domain
 
-import be.rlab.augusto.nlp.IndexManager
-import be.rlab.augusto.nlp.TextClassifier
-import be.rlab.augusto.nlp.model.Language
-import be.rlab.augusto.nlp.model.TrainingDataSet
-import be.rlab.tehanu.domain.Memory
+import be.rlab.nlp.TextClassifier
+import be.rlab.nlp.model.Language
+import be.rlab.nlp.model.TrainingDataSet
+import be.rlab.search.IndexManager
+import be.rlab.tehanu.store.Memory
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 

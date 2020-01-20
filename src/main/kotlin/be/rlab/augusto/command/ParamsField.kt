@@ -3,7 +3,7 @@ package be.rlab.augusto.command
 import be.rlab.augusto.domain.ParamsParser
 import be.rlab.augusto.domain.model.ParamDefinition
 import be.rlab.augusto.domain.triggers.RequiredParamsTrigger
-import be.rlab.augusto.nlp.model.Language
+import be.rlab.nlp.model.Language
 import be.rlab.tehanu.view.UserInput
 import be.rlab.tehanu.view.model.Field
 

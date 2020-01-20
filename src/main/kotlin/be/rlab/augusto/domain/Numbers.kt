@@ -1,6 +1,6 @@
 package be.rlab.augusto.domain
 
-import be.rlab.augusto.nlp.model.Language
+import be.rlab.nlp.model.Language
 import com.ibm.icu.text.NumberFormat
 import com.ibm.icu.text.RuleBasedNumberFormat
 import com.ibm.icu.util.ULocale

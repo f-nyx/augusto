@@ -2,8 +2,8 @@ package be.rlab.augusto.domain
 
 import be.rlab.augusto.domain.model.ParamDefinition
 import be.rlab.augusto.domain.model.ParamValue
-import be.rlab.augusto.nlp.Normalizer
-import be.rlab.augusto.nlp.model.Language
+import be.rlab.nlp.Normalizer
+import be.rlab.nlp.model.Language
 
 class ParamsParser(
     /** List of parameters to parse. */
