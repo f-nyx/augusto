@@ -3,7 +3,7 @@ package be.rlab.augusto.domain.triggers
 import be.rlab.augusto.domain.MessageNormalizer
 import be.rlab.nlp.TextClassifier
 import be.rlab.nlp.model.Language
-import be.rlab.tehanu.triggers.Trigger
+import be.rlab.tehanu.messages.Trigger
 import be.rlab.tehanu.messages.model.Chat
 import be.rlab.tehanu.messages.model.Message
 import be.rlab.tehanu.messages.model.TextMessage
