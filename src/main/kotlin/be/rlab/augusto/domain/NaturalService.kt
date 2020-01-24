@@ -1,5 +1,6 @@
 package be.rlab.augusto.domain
 
+import be.rlab.augusto.domain.triggers.CategoryTrigger
 import be.rlab.nlp.TextClassifier
 import be.rlab.nlp.model.Language
 import be.rlab.nlp.model.TrainingDataSet
@@ -29,33 +30,47 @@ class NaturalService(
         )!!.reader().readLines().filter { resource ->
             resource.endsWith(".conf")
         }.forEach { resource ->
-            val trainingConfig: Config = ConfigFactory.load("nlp/training/${resource}")
-            val force: Boolean = trainingConfig.getBoolean("force")
-            val classifierName: String = trainingConfig.getString("classifier")
+            val trainingConfig: Config = ConfigFactory.load("nlp/training/${resource}").resolve()
 
-            if (force || !appliedTrainingSets.contains(resource)) {
-                val newTrainingSets: List<TrainingDataSet> = trainingConfig.getConfigList("training")
-                    .map(this::createTrainingSet)
-
-                val classifier = TextClassifier(
-                    indexManager = indexManager,
-                    namespace = classifierName
-                )
-
-                classifier.train(newTrainingSets)
-
-                trainingSets = trainingSets + newTrainingSets
-                appliedTrainingSets = appliedTrainingSets + resource
+            trainingConfig.getConfigList("training-set").forEach { config ->
+                train(resource, config)
             }
         }
 
         indexManager.sync()
     }
 
+    private fun train(
+        resource: String,
+        trainingConfig: Config
+    ) {
+        val force: Boolean = trainingConfig.getBoolean("force")
+
+        if (force || !appliedTrainingSets.contains(resource)) {
+            val namespace: String = trainingConfig.getString("namespace")
+            val newTrainingSets: List<TrainingDataSet> = trainingConfig.getConfigList("training")
+                .map(this::createTrainingSet)
+
+            val classifier = TextClassifier(
+                indexManager = indexManager,
+                namespace = namespace
+            )
+
+            classifier.train(newTrainingSets)
+
+            trainingSets = trainingSets + newTrainingSets
+            appliedTrainingSets = appliedTrainingSets + resource
+        }
+    }
+
     private fun createTrainingSet(config: Config): TrainingDataSet {
         return TrainingDataSet(
             language = Language.valueOf(config.getString("language").toUpperCase()),
-            categories = config.getStringList("categories"),
+            categories = if (config.hasPath("categories")) {
+                config.getStringList("categories")
+            } else {
+                listOf(CategoryTrigger.DEFAULT_CATEGORY)
+            },
             values = config.getStringList("values")
         )
     }

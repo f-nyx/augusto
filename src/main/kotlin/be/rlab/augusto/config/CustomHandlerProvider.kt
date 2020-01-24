@@ -33,13 +33,13 @@ class CustomHandlerProvider(
         },
         CategoryTrigger::class to { targetName, triggerConfig ->
             CategoryTrigger(
-                name = triggerConfig.name,
+                name = triggerParam(triggerConfig, "namespace")
+                    ?: throw RuntimeException("the trigger parameter 'namespace' is required"),
                 textClassifier = TextClassifier(
                     indexManager = indexManager,
                     namespace = targetName
                 ),
-                category = triggerParam(triggerConfig, "category")
-                    ?: throw RuntimeException("the trigger parameter 'category' is required"),
+                category = triggerParam(triggerConfig, "category") ?: CategoryTrigger.DEFAULT_CATEGORY,
                 score = triggerParam(triggerConfig, "score")?.toDouble() ?: 0.75
             )
         }

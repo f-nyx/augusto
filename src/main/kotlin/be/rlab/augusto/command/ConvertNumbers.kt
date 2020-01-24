@@ -9,9 +9,19 @@ import be.rlab.augusto.domain.triggers.TextTrigger
 import be.rlab.nlp.model.Language
 import be.rlab.tehanu.annotations.*
 import be.rlab.tehanu.messages.MessageContext
+import be.rlab.tehanu.messages.model.ParamValue
 import be.rlab.tehanu.messages.model.TextMessage
+import be.rlab.tehanu.view.model.params
 
 @MessageListener("ConvertNumbers")
+@Params(
+    Param("romanos"),
+    Param("decimales"),
+    Param("arábigos"),
+    Param("naturales"),
+    Param("comunes"),
+    Param("base", 1)
+)
 class ConvertNumbers {
 
     companion object {
@@ -33,18 +43,10 @@ class ConvertNumbers {
         "comunes" to DecimalNumberConverter()
     )
 
-    @Handler("mention")
+    @Handler("mention", minParams = NUM_PARAMS, maxParams = NUM_PARAMS)
     @Trigger(type = CategoryTrigger::class, params = [
-        TriggerParam("category", "convert"),
+        TriggerParam("namespace", "ConvertNumbers::convert"),
         TriggerParam("score", "0.75")
-    ])
-    @Params(minParams = NUM_PARAMS, maxParams = NUM_PARAMS, params = [
-        Param("romanos"),
-        Param("decimales"),
-        Param("arábigos"),
-        Param("naturales"),
-        Param("comunes"),
-        Param("base", 1)
     ])
     fun convertFromUnits(
         context: MessageContext
@@ -72,11 +74,11 @@ class ConvertNumbers {
     fun convertFromNumber(
         context: MessageContext,
         message: TextMessage
-    ): MessageContext = context.userInput(
-        context.messages[UNIT_ANSWERS]
-    ) {
+    ): MessageContext = context.userInput {
+        val params: List<ParamValue> by params(context.messages[UNIT_ANSWERS], NUM_PARAMS)
+
         onSubmit {
-            withConverters(context) { sourceConverter, targetConverter ->
+            withConverters(context, params) { sourceConverter, targetConverter ->
                 val decimal: Int = sourceConverter.toDecimal(
                     MessageNormalizer(message, Language.SPANISH).normalize()
                 )
@@ -86,11 +88,11 @@ class ConvertNumbers {
         }
     }
 
-    @Handler
+    @Handler("mention")
     @Trigger(
         type = CategoryTrigger::class,
         params = [
-            TriggerParam("category", "help"),
+            TriggerParam("namespace", "ConvertNumbers::help"),
             TriggerParam("score", "0.75")
         ]
     )
@@ -100,6 +102,7 @@ class ConvertNumbers {
 
     private fun withConverters(
         context: MessageContext,
+        params: List<ParamValue> = context.params,
         callback: (NumberConverter, NumberConverter) -> MessageContext
     ): MessageContext = with(context) {
         val sourceConverter: NumberConverter? = converters[params[0].name]

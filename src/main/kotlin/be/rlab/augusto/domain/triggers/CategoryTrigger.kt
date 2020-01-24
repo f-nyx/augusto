@@ -21,6 +21,7 @@ class CategoryTrigger(
 
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(CategoryTrigger::class.java)
+        const val DEFAULT_CATEGORY = "::default"
     }
 
     override fun applies(
