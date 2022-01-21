@@ -12,7 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <h2.version>1.4.197</h2.version>
+        <h2.version>2.1.210</h2.version>
         <tehanu.version>2.2.2-SNAPSHOT</tehanu.version>
         <search.version>1.0.0-SNAPSHOT</search.version>
         <typesafe.version>1.3.3</typesafe.version>
